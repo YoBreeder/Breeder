@@ -4,7 +4,7 @@ import { io } from 'socket.io-client'
 import api from '../api'
 import useStore from '../store'
 
-const API = 'http://localhost:4000'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 export default function ChatScreen() {
   const { id } = useParams()
@@ -14,6 +14,7 @@ export default function ChatScreen() {
   const [member, setMember] = useState(null)
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
+  const [sending, setSending] = useState(false)
   const bottomRef = useRef()
   const socketRef = useRef()
 
@@ -21,22 +22,37 @@ export default function ChatScreen() {
     api.get(`/members/${id}`).then(r => setMember(r.data)).catch(() => {})
     api.get(`/messages/${id}`).then(r => setMessages(r.data)).catch(() => {})
 
-    const socket = io(API, { auth: { token } })
-    socketRef.current = socket
-    socket.on('new_message', msg => {
-      if (msg.from_id === id || msg.to_id === id) setMessages(m => [...m, msg])
-    })
-    socket.on('message_sent', msg => setMessages(m => [...m, msg]))
-    return () => socket.disconnect()
+    // Socket for real-time incoming messages only
+    try {
+      const socket = io(API, { auth: { token }, transports: ['websocket', 'polling'] })
+      socketRef.current = socket
+      socket.on('new_message', msg => {
+        if (msg.from_id === id || msg.to_id === id) {
+          setMessages(m => [...m, msg])
+        }
+      })
+    } catch {}
+
+    return () => socketRef.current?.disconnect()
   }, [id])
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
-  const send = e => {
+  const send = async e => {
     e.preventDefault()
-    if (!input.trim()) return
-    socketRef.current?.emit('send_message', { to: id, content: input.trim() })
+    if (!input.trim() || sending) return
+    const content = input.trim()
     setInput('')
+    setSending(true)
+    try {
+      // REST API is the reliable send path — Socket.io is bonus real-time only
+      const { data } = await api.post(`/messages/${id}`, { content })
+      setMessages(m => [...m, data])
+    } catch {
+      setInput(content) // restore on failure
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -78,7 +94,9 @@ export default function ChatScreen() {
           placeholder="Type a message…"
           autoFocus
         />
-        <button type="submit" style={s.sendBtn} disabled={!input.trim()}>➤</button>
+        <button type="submit" style={s.sendBtn} disabled={!input.trim() || sending}>
+          {sending ? '…' : '➤'}
+        </button>
       </form>
     </div>
   )

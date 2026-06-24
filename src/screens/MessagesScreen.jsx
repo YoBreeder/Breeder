@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api'
 
-const API = 'http://localhost:4000'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 export default function MessagesScreen() {
   const nav = useNavigate()
@@ -17,10 +17,11 @@ export default function MessagesScreen() {
 
   return (
     <div style={s.root}>
+      <div style={s.pageTitle}>Inbox</div>
       <div style={s.searchRow}>
         <span style={s.searchIcon}>🔍</span>
         <input style={s.searchInput} placeholder="Search your chats" value={search} onChange={e => setSearch(e.target.value)} />
-        <button style={s.filterBtn}>⚙️</button>
+        <button style={s.filterBtn} onClick={() => nav('/profile')}>⚙️</button>
       </div>
 
       <div style={s.list}>
@@ -69,6 +70,7 @@ function timeAgo(d) {
 
 const s = {
   root: { display: 'flex', flexDirection: 'column', height: '100%' },
+  pageTitle: { fontSize: 22, fontWeight: 900, color: 'var(--text)', padding: '16px 16px 4px' },
   searchRow: { padding: '12px 12px 8px', display: 'flex', alignItems: 'center', gap: 8, position: 'relative' },
   searchIcon: { position: 'absolute', left: 24, top: '50%', transform: 'translateY(-50%)', fontSize: 16, pointerEvents: 'none' },
   searchInput: { paddingLeft: 36, borderRadius: 14, fontSize: 14, flex: 1 },

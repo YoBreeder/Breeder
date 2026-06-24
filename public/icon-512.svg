@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="35%" cy="25%" r="70%">
+      <stop offset="0%" stop-color="#4c1d95"/>
+      <stop offset="100%" stop-color="#0d0b1e"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="110" fill="url(#bg)"/>
+  <text x="256" y="300" font-size="260" text-anchor="middle" dominant-baseline="middle">🐂</text>
+  <text x="256" y="430" font-size="68" font-weight="900" text-anchor="middle" font-family="'Helvetica Neue',Arial,sans-serif">
+    <tspan fill="#ffffff">Yo</tspan><tspan fill="#a78bfa">Breeder</tspan>
+  </text>
+</svg>

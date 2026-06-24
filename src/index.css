@@ -57,3 +57,8 @@ input:focus, textarea:focus { border-color: var(--primary-light); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn-primary { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; }
 .btn-outline { background: transparent; border: 2px solid var(--primary-light); color: var(--primary-light); }
+
+@keyframes voicePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+}

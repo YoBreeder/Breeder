@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import api from '../api'
 import useStore from '../store'
 
-const API = 'http://localhost:4000'
-const ROLES = ['Breeder', 'Bottom', 'Versatile', 'Top', 'Side', 'Curious']
+const API = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+const ROLES = ['Breeder', 'Both', 'Receiver']
 
 export default function ProfileScreen() {
   const nav = useNavigate()
@@ -21,7 +21,7 @@ export default function ProfileScreen() {
     setSaving(true)
     try {
       const { data } = await api.put('/profile/me', {
-        bio: profile.bio, role: profile.role, city: profile.city, age: profile.age
+        bio: profile.bio, role: profile.role, city: profile.city, age: profile.age, username: profile.username
       })
       updateUser(data)
       alert('Profile saved!')
@@ -53,10 +53,14 @@ export default function ProfileScreen() {
         </div>
         <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={uploadPhoto} />
         <div style={s.username}>{profile.username}</div>
+        <div style={s.onlineBadge}><span style={s.onlineDot} />Online</div>
         {profile.is_premium && <div style={s.premiumBadge}>👑 Premium</div>}
       </div>
 
       <div style={s.form}>
+        <label style={s.label}>Username</label>
+        <input value={profile.username || ''} onChange={e => setProfile(p => ({ ...p, username: e.target.value }))} placeholder="Username" />
+
         <label style={s.label}>Age</label>
         <input type="number" value={profile.age || ''} onChange={e => setProfile(p => ({ ...p, age: e.target.value }))} min={18} max={99} />
 
@@ -100,6 +104,8 @@ const s = {
   addPhoto: { fontSize: 10 },
   photoEdit: { position: 'absolute', bottom: 0, right: 0, background: 'var(--primary)', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 },
   username: { fontSize: 22, fontWeight: 800, color: '#fff' },
+  onlineBadge: { display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(34,197,94,0.15)', border: '1px solid #22C55E', color: '#22C55E', borderRadius: 20, padding: '3px 12px', fontSize: 12, fontWeight: 700 },
+  onlineDot: { width: 8, height: 8, borderRadius: '50%', background: '#22C55E', display: 'inline-block', boxShadow: '0 0 6px #22C55E' },
   premiumBadge: { background: 'rgba(234,179,8,0.2)', border: '1px solid #EAB308', color: '#EAB308', borderRadius: 20, padding: '3px 12px', fontSize: 13, fontWeight: 600 },
   form: { padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 10 },
   label: { fontSize: 13, fontWeight: 600, color: 'var(--text-dim)', marginBottom: -4 },

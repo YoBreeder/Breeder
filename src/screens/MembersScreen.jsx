@@ -3,13 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import api from '../api'
 import useStore from '../store'
 
-const API = 'http://localhost:4000'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+const MAX_BLAST = 5
+const PULSE_WORDS = ['intercourse', 'penetration', 'lovemaking', 'copulation', 'fornication', 'mating', 'procreate']
 
 export default function MembersScreen() {
   const nav = useNavigate()
   const user = useStore(s => s.user)
   const [members, setMembers] = useState([])
   const [search, setSearch] = useState('')
+  const [city, setCity] = useState('')
   const [onlineOnly, setOnlineOnly] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -22,18 +25,18 @@ export default function MembersScreen() {
 
   const load = async () => {
     try {
-      const { data } = await api.get('/members', { params: { search, online_only: onlineOnly } })
+      const { data } = await api.get('/members', { params: { search, city, online_only: onlineOnly } })
       setMembers(data)
     } catch {}
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [search, onlineOnly])
+  useEffect(() => { load() }, [search, city, onlineOnly])
 
   const toggleSelect = (id) => {
     if (selected.includes(id)) {
       setSelected(selected.filter(x => x !== id))
-    } else if (selected.length < 10) {
+    } else if (selected.length < MAX_BLAST) {
       setSelected([...selected, id])
     }
   }
@@ -78,7 +81,7 @@ export default function MembersScreen() {
           <span style={s.searchIcon}>🔍</span>
           <input
             style={s.searchInput}
-            placeholder="Search members, city…"
+            placeholder="Search members…"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -97,11 +100,11 @@ export default function MembersScreen() {
       {multiplierMode && (
         <div style={s.multiplierBanner}>
           <div style={s.bannerTop}>
-            <span style={s.bannerTitle}>✕10 MULTIPLIER</span>
-            <span style={s.bannerCount}>{selected.length}/10 selected</span>
+            <span style={s.bannerTitle}>×5 MULTIPLIER</span>
+            <span style={s.bannerCount}>{selected.length}/{MAX_BLAST} selected</span>
             <button style={s.bannerClose} onClick={cancelMultiplier}>✕</button>
           </div>
-          <p style={s.bannerHint}>Tap up to 10 profiles, then type your message and blast it to all of them.</p>
+          <p style={s.bannerHint}>Tap up to 5 profiles, type your message and blast it to all of them.</p>
           {selected.length > 0 && (
             <div style={s.blastRow}>
               <input
@@ -118,13 +121,13 @@ export default function MembersScreen() {
         </div>
       )}
 
-      {/* Member list */}
+      {/* Member grid */}
       {loading ? (
         <div style={s.loading}>Finding guys near you…</div>
       ) : (
-        <div style={s.list}>
+        <div style={s.grid}>
           {members.map(m => (
-            <MemberRow
+            <MemberCard
               key={m.id}
               member={m}
               onClick={() => handleCardClick(m)}
@@ -141,11 +144,25 @@ export default function MembersScreen() {
         </div>
       )}
 
-      {/* Multiplier FAB */}
+      {/* City filter bar — always at the bottom */}
+      <div style={s.cityBar}>
+        <span style={s.cityBarIcon}>📍</span>
+        <input
+          style={s.cityInput}
+          placeholder="Filter by city…"
+          value={city}
+          onChange={e => setCity(e.target.value)}
+        />
+        {city && (
+          <button style={s.cityClear} onClick={() => setCity('')}>✕</button>
+        )}
+      </div>
+
+      {/* ×5 Multiplier FAB — always visible */}
       {!multiplierMode && (
-        <button style={s.multiplierFab} onClick={openMultiplier} title="Multiplier — message 10 at once">
-          <span style={s.fabX}>✕</span>
-          <span style={s.fab10}>10</span>
+        <button style={s.multiplierFab} onClick={openMultiplier} title="×5 Multiplier — message 5 at once">
+          <span style={s.fabX}>×</span>
+          <span style={s.fab5}>5</span>
           {!user?.is_premium && <span style={s.fabLock}>🔒</span>}
         </button>
       )}
@@ -153,47 +170,30 @@ export default function MembersScreen() {
   )
 }
 
-function MemberRow({ member: m, onClick, selectMode, selected }) {
+function MemberCard({ member: m, onClick, selectMode, selected }) {
   const photo = m.photos?.[0] ? `${API}${m.photos[0]}` : null
   const isNew = Date.now() - new Date(m.created_at).getTime() < 7 * 86400000
-  const minutesAgo = Math.floor((Date.now() - new Date(m.last_seen).getTime()) / 60000)
-  const lastSeenStr = m.is_online ? 'Online now' : minutesAgo < 60 ? `${minutesAgo}m ago` : minutesAgo < 1440 ? `${Math.floor(minutesAgo/60)}h ago` : 'A while ago'
 
   return (
-    <div style={{ ...s.row, ...(selected ? s.rowSelected : {}) }} onClick={onClick}>
-      {/* Avatar */}
-      <div style={s.avatarWrap}>
+    <div style={{ ...s.card, ...(selected ? s.cardSelected : {}) }} onClick={onClick}>
+      <div style={s.photoWrap}>
         {photo
-          ? <img src={photo} alt={m.username} style={s.avatar} />
-          : <div style={s.avatarPlaceholder}>👤</div>
+          ? <img src={photo} alt={m.username} style={s.photo} />
+          : <div style={s.photoPlaceholder}>👤</div>
         }
         <span style={s.statusDot(m.is_online)} />
-        {m.is_boosted && <span style={s.boostRing} />}
+        {isNew && <span style={s.newTag}>NEW</span>}
+        {m.is_boosted && <span style={s.boostBadge}>⚡</span>}
+        {selectMode && (
+          <div style={{ ...s.checkbox, ...(selected ? s.checkboxOn : {}) }}>
+            {selected && <span style={s.checkmark}>✓</span>}
+          </div>
+        )}
       </div>
-
-      {/* Info */}
-      <div style={s.info}>
-        <div style={s.nameLine}>
-          <span style={s.username}>{m.username}</span>
-          {m.age && <span style={s.age}>{m.age}</span>}
-          {m.is_premium && <span style={s.verifiedBadge}>✓</span>}
-          {isNew && <span style={s.newTag}>NEW</span>}
-        </div>
-        {m.role && <div style={s.role}>{m.role}</div>}
-        <div style={s.meta}>
-          {m.city && <span style={s.cityText}>📍 {m.city}</span>}
-          <span style={{ ...s.lastSeen, ...(m.is_online ? s.lastSeenOnline : {}) }}>{lastSeenStr}</span>
-        </div>
-      </div>
-
-      {/* Right side */}
-      <div style={s.right}>
-        {selectMode
-          ? <div style={{ ...s.checkbox, ...(selected ? s.checkboxOn : {}) }}>
-              {selected && <span style={s.checkmark}>✓</span>}
-            </div>
-          : <button style={s.msgQuick} onClick={e => { e.stopPropagation(); }}>💬</button>
-        }
+      <div style={s.cardInfo}>
+        <div style={s.cardName}>{m.username}{m.age ? `, ${m.age}` : ''}</div>
+        {m.role && <div style={s.cardRole}>{m.role}</div>}
+        {m.city && <div style={s.cardCity}>📍 {m.city}</div>}
       </div>
     </div>
   )
@@ -209,7 +209,6 @@ const s = {
   filterBtnActive: { background: 'rgba(34,197,94,0.12)', border: '1px solid #22C55E', color: '#22C55E' },
   onlineDot: { width: 8, height: 8, borderRadius: '50%', background: 'currentColor', flexShrink: 0 },
 
-  // Multiplier banner
   multiplierBanner: { background: 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(59,130,246,0.15))', border: '1px solid var(--primary)', borderRadius: 16, margin: '0 12px 8px', padding: '14px 14px 10px', flexShrink: 0 },
   bannerTop: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 },
   bannerTitle: { fontWeight: 800, fontSize: 15, color: 'var(--primary-light)', letterSpacing: 1, flex: 1 },
@@ -220,46 +219,36 @@ const s = {
   blastInput: { flex: 1, borderRadius: 50, fontSize: 13, padding: '0 14px', height: 38, background: 'var(--surface)', border: '1px solid var(--border)' },
   blastBtn: { padding: '0 16px', height: 38, borderRadius: 50, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: '#fff', fontWeight: 700, fontSize: 13, flexShrink: 0 },
 
-  // List
-  list: { flex: 1, overflowY: 'auto', padding: '4px 12px 90px' },
+  grid: { flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '8px 10px 80px', alignContent: 'start' },
   loading: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', flexDirection: 'column', gap: 12, fontSize: 15 },
-  empty: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: 60, color: 'var(--text-dim)' },
+  empty: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, padding: 60, color: 'var(--text-dim)', gridColumn: '1 / -1' },
   emptyIcon: { fontSize: 48, opacity: 0.3 },
 
-  // Row card
-  row: { display: 'flex', alignItems: 'center', gap: 14, padding: '10px 14px', background: 'var(--surface)', borderRadius: 18, marginBottom: 8, border: '1px solid var(--border)', cursor: 'pointer', transition: 'border-color 0.15s' },
-  rowSelected: { border: '1.5px solid var(--primary)', background: 'rgba(124,58,237,0.08)' },
+  cityBar: { display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--surface)', borderTop: '1px solid var(--border)', flexShrink: 0 },
+  cityBarIcon: { fontSize: 16, flexShrink: 0 },
+  cityInput: { flex: 1, height: 36, borderRadius: 50, fontSize: 13, padding: '0 14px', background: 'var(--surface2)', border: '1px solid var(--border)' },
+  cityClear: { fontSize: 14, color: 'var(--text-dim)', padding: '0 6px', flexShrink: 0 },
 
-  // Avatar
-  avatarWrap: { position: 'relative', flexShrink: 0, width: 58, height: 58 },
-  avatar: { width: 58, height: 58, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)' },
-  avatarPlaceholder: { width: 58, height: 58, borderRadius: '50%', background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, border: '2px solid var(--border)' },
-  statusDot: online => ({ position: 'absolute', bottom: 2, right: 2, width: 13, height: 13, borderRadius: '50%', background: online ? 'var(--online)' : 'var(--away)', border: '2px solid var(--surface)' }),
-  boostRing: { position: 'absolute', inset: -3, borderRadius: '50%', border: '2px solid var(--primary-light)', animation: 'none' },
+  card: { background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', cursor: 'pointer', transition: 'border-color 0.15s' },
+  cardSelected: { border: '2px solid var(--primary)', background: 'rgba(124,58,237,0.08)' },
 
-  // Info
-  info: { flex: 1, minWidth: 0 },
-  nameLine: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 },
-  username: { fontWeight: 700, fontSize: 15, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-  age: { fontSize: 14, color: 'var(--text-dim)', flexShrink: 0 },
-  verifiedBadge: { background: 'rgba(59,130,246,0.15)', color: 'var(--accent)', borderRadius: '50%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 },
-  newTag: { background: 'rgba(124,58,237,0.2)', color: 'var(--primary-light)', borderRadius: 6, fontSize: 10, fontWeight: 800, padding: '1px 5px', letterSpacing: 0.5 },
-  role: { fontSize: 12, color: 'var(--primary-light)', fontWeight: 600, marginBottom: 3 },
-  meta: { display: 'flex', alignItems: 'center', gap: 10 },
-  cityText: { fontSize: 12, color: 'var(--text-dim)' },
-  lastSeen: { fontSize: 12, color: 'var(--text-dim)' },
-  lastSeenOnline: { color: 'var(--online)', fontWeight: 600 },
-
-  // Right
-  right: { flexShrink: 0 },
-  msgQuick: { width: 36, height: 36, borderRadius: '50%', background: 'var(--surface2)', border: '1px solid var(--border)', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  checkbox: { width: 26, height: 26, borderRadius: '50%', border: '2px solid var(--border)', background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  photoWrap: { position: 'relative', width: '100%', aspectRatio: '3/4' },
+  photo: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
+  photoPlaceholder: { width: '100%', height: '100%', background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48 },
+  statusDot: online => ({ position: 'absolute', bottom: 8, right: 8, width: 12, height: 12, borderRadius: '50%', background: online ? 'var(--online)' : 'var(--away)', border: '2px solid var(--surface)' }),
+  newTag: { position: 'absolute', top: 8, left: 8, background: 'var(--primary)', color: '#fff', fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 8, letterSpacing: 0.5 },
+  boostBadge: { position: 'absolute', top: 8, right: 8, fontSize: 16 },
+  checkbox: { position: 'absolute', top: 8, left: 8, width: 26, height: 26, borderRadius: '50%', border: '2px solid #fff', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   checkboxOn: { background: 'var(--primary)', border: '2px solid var(--primary-light)' },
   checkmark: { color: '#fff', fontSize: 14, fontWeight: 700 },
 
-  // Multiplier FAB
-  multiplierFab: { position: 'absolute', bottom: 80, right: 14, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg, #4C1D95, var(--primary))', boxShadow: '0 4px 20px rgba(124,58,237,0.6)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', zIndex: 100 },
-  fabX: { color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: 700, lineHeight: 1 },
-  fab10: { color: '#fff', fontSize: 18, fontWeight: 900, lineHeight: 1 },
+  cardInfo: { padding: '8px 10px 10px' },
+  cardName: { fontWeight: 700, fontSize: 13, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  cardRole: { fontSize: 11, color: 'var(--primary-light)', fontWeight: 600, marginTop: 2 },
+  cardCity: { fontSize: 11, color: 'var(--text-dim)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+
+  multiplierFab: { position: 'absolute', bottom: 60, right: 14, width: 54, height: 54, borderRadius: '50%', background: 'linear-gradient(135deg, #4C1D95, var(--primary))', boxShadow: '0 4px 20px rgba(124,58,237,0.6)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', zIndex: 100 },
+  fabX: { color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: 700, lineHeight: 1 },
+  fab5: { color: '#fff', fontSize: 20, fontWeight: 900, lineHeight: 1 },
   fabLock: { fontSize: 10, lineHeight: 1 },
 }
