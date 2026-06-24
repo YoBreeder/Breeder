@@ -12,6 +12,9 @@ import ProfileScreen   from './screens/ProfileScreen'
 import MemberScreen    from './screens/MemberScreen'
 import ViewsScreen     from './screens/ViewsScreen'
 import PremiumScreen   from './screens/PremiumScreen'
+import VoiceDropScreen from './screens/VoiceDropScreen'
+import ResetPasswordScreen from './screens/ResetPasswordScreen'
+import CypherScreen    from './screens/CypherScreen'
 import Layout          from './components/Layout'
 
 function Guard({ children }) {
@@ -25,7 +28,8 @@ export default function App() {
     <Routes>
       <Route path="/"           element={token ? <Navigate to="/members" /> : <LandingScreen />} />
       <Route path="/login"      element={<LoginScreen />} />
-      <Route path="/register"   element={<RegisterScreen />} />
+      <Route path="/register"       element={<RegisterScreen />} />
+      <Route path="/reset-password" element={<ResetPasswordScreen />} />
       <Route path="/members"    element={<Guard><Layout><MembersScreen /></Layout></Guard>} />
       <Route path="/members/:id" element={<Guard><Layout><MemberScreen /></Layout></Guard>} />
       <Route path="/map"        element={<Guard><Layout><MapScreen /></Layout></Guard>} />
@@ -34,6 +38,8 @@ export default function App() {
       <Route path="/views"      element={<Guard><Layout><ViewsScreen /></Layout></Guard>} />
       <Route path="/profile"    element={<Guard><Layout><ProfileScreen /></Layout></Guard>} />
       <Route path="/premium"    element={<Guard><Layout><PremiumScreen /></Layout></Guard>} />
+      <Route path="/voicedrop"  element={<Guard><Layout><VoiceDropScreen /></Layout></Guard>} />
+      <Route path="/cypher"     element={<Guard><Layout><CypherScreen /></Layout></Guard>} />
     </Routes>
   )
 }
