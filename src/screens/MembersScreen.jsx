@@ -173,6 +173,25 @@ export default function MembersScreen() {
 function MemberCard({ member: m, onClick, selectMode, selected }) {
   const photo = m.photos?.[0] ? `${API}${m.photos[0]}` : null
   const isNew = Date.now() - new Date(m.created_at).getTime() < 7 * 86400000
+  const [playing, setPlaying] = React.useState(false)
+  const audioRef = React.useRef(null)
+
+  const playVoiceDrop = (e) => {
+    e.stopPropagation()
+    if (!m.voice_drop_url) return
+    if (playing) {
+      audioRef.current?.pause()
+      audioRef.current.currentTime = 0
+      setPlaying(false)
+      return
+    }
+    if (!audioRef.current) {
+      audioRef.current = new Audio(`${API}${m.voice_drop_url}`)
+      audioRef.current.onended = () => setPlaying(false)
+    }
+    audioRef.current.play()
+    setPlaying(true)
+  }
 
   return (
     <div style={{ ...s.card, ...(selected ? s.cardSelected : {}) }} onClick={onClick}>
@@ -184,6 +203,11 @@ function MemberCard({ member: m, onClick, selectMode, selected }) {
         <span style={s.statusDot(m.is_online)} />
         {isNew && <span style={s.newTag}>NEW</span>}
         {m.is_boosted && <span style={s.boostBadge}>⚡</span>}
+        {m.voice_drop_url && !selectMode && (
+          <button style={{ ...s.speakerBtn, ...(playing ? s.speakerBtnPlaying : {}) }} onClick={playVoiceDrop}>
+            {playing ? '⏹' : '🔊'}
+          </button>
+        )}
         {selectMode && (
           <div style={{ ...s.checkbox, ...(selected ? s.checkboxOn : {}) }}>
             {selected && <span style={s.checkmark}>✓</span>}
@@ -238,6 +262,8 @@ const s = {
   statusDot: online => ({ position: 'absolute', bottom: 8, right: 8, width: 12, height: 12, borderRadius: '50%', background: online ? 'var(--online)' : 'var(--away)', border: '2px solid var(--surface)' }),
   newTag: { position: 'absolute', top: 8, left: 8, background: 'var(--primary)', color: '#fff', fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 8, letterSpacing: 0.5 },
   boostBadge: { position: 'absolute', top: 8, right: 8, fontSize: 16 },
+  speakerBtn: { position: 'absolute', top: 8, right: 8, width: 32, height: 32, borderRadius: '50%', background: 'rgba(0,0,0,0.55)', border: '1.5px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, cursor: 'pointer', zIndex: 10, transition: 'transform 0.15s, background 0.15s' },
+  speakerBtnPlaying: { background: 'rgba(124,58,237,0.75)', border: '1.5px solid var(--primary-light)', transform: 'scale(1.1)' },
   checkbox: { position: 'absolute', top: 8, left: 8, width: 26, height: 26, borderRadius: '50%', border: '2px solid #fff', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   checkboxOn: { background: 'var(--primary)', border: '2px solid var(--primary-light)' },
   checkmark: { color: '#fff', fontSize: 14, fontWeight: 700 },
