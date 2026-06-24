@@ -115,7 +115,7 @@ export default function CypherScreen() {
         <div style={s.textFallback}>
           <input
             style={s.textInput}
-            placeholder='Or type what you\'re looking for…'
+            placeholder='Or type what you are looking for...'
             value={intent}
             onChange={e => setIntent(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && intent.trim() && runMatch(intent)}
