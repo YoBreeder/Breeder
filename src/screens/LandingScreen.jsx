@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store'
 import { LANGUAGES, useT } from '../i18n'
+import SocialLogin from '../components/SocialLogin'
 
 const ROLES = ['Breeder', 'Receiver', 'Both']
 
@@ -439,6 +440,8 @@ export default function LandingScreen() {
           </span>
           <span style={s.enterSub}>{tr.orTapHere}</span>
         </button>
+
+        <SocialLogin role={selectedRole || ''} label="Quick sign-up with" />
 
         <div style={s.loginRow}>
           {tr.alreadyMember}{' '}
