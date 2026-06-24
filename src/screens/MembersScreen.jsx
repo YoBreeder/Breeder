@@ -3,6 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import api from '../api'
 import useStore from '../store'
 
+function kmBetween(lat1, lng1, lat2, lng2) {
+  if (!lat1 || !lng1 || !lat2 || !lng2) return null
+  const R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+}
+
 const API = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 const MAX_BLAST = 5
 const PULSE_WORDS = ['intercourse', 'penetration', 'lovemaking', 'copulation', 'fornication', 'mating', 'procreate']
@@ -10,6 +17,7 @@ const PULSE_WORDS = ['intercourse', 'penetration', 'lovemaking', 'copulation', '
 export default function MembersScreen() {
   const nav = useNavigate()
   const user = useStore(s => s.user)
+  const userProfile = useStore(s => s.user)
   const [members, setMembers] = useState([])
   const [search, setSearch] = useState('')
   const [city, setCity] = useState('')
@@ -133,6 +141,8 @@ export default function MembersScreen() {
               onClick={() => handleCardClick(m)}
               selectMode={multiplierMode}
               selected={selected.includes(m.id)}
+              userLat={userProfile?.lat}
+              userLng={userProfile?.lng}
             />
           ))}
           {members.length === 0 && (
@@ -170,23 +180,26 @@ export default function MembersScreen() {
   )
 }
 
-function MemberCard({ member: m, onClick, selectMode, selected }) {
+function MemberCard({ member: m, onClick, selectMode, selected, userLat, userLng }) {
   const photo = m.photos?.[0] ? `${API}${m.photos[0]}` : null
   const isNew = Date.now() - new Date(m.created_at).getTime() < 7 * 86400000
   const [playing, setPlaying] = React.useState(false)
   const audioRef = React.useRef(null)
 
+  const dist = kmBetween(userLat, userLng, m.lat, m.lng)
+  const distLabel = dist == null ? null : dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)}km`
+
   const playVoiceDrop = (e) => {
     e.stopPropagation()
-    if (!m.voice_drop_url) return
+    if (!m.voice_drop) return
     if (playing) {
       audioRef.current?.pause()
-      audioRef.current.currentTime = 0
+      if (audioRef.current) audioRef.current.currentTime = 0
       setPlaying(false)
       return
     }
     if (!audioRef.current) {
-      audioRef.current = new Audio(`${API}${m.voice_drop_url}`)
+      audioRef.current = new Audio(`${API}${m.voice_drop}`)
       audioRef.current.onended = () => setPlaying(false)
     }
     audioRef.current.play()
@@ -200,24 +213,43 @@ function MemberCard({ member: m, onClick, selectMode, selected }) {
           ? <img src={photo} alt={m.username} style={s.photo} />
           : <div style={s.photoPlaceholder}>👤</div>
         }
+
+        {/* Bottom gradient overlay — role + distance */}
+        <div style={s.cardOverlay}>
+          <div style={s.cardOverlayRow}>
+            {m.role && <span style={s.roleChip}>{m.role}</span>}
+            {distLabel && <span style={s.distChip}>◎ {distLabel}</span>}
+          </div>
+          <div style={s.cardOverlayName}>{m.username}{m.age ? `, ${m.age}` : ''}</div>
+        </div>
+
+        {/* Online dot */}
         <span style={s.statusDot(m.is_online)} />
+
         {isNew && <span style={s.newTag}>NEW</span>}
-        {m.is_boosted && <span style={s.boostBadge}>⚡</span>}
-        {m.voice_drop_url && !selectMode && (
+        {m.is_boosted && !m.voice_drop && <span style={s.boostBadge}>⚡</span>}
+
+        {/* Purple speaker — top right */}
+        {m.voice_drop && !selectMode && (
           <button style={{ ...s.speakerBtn, ...(playing ? s.speakerBtnPlaying : {}) }} onClick={playVoiceDrop}>
-            {playing ? '⏹' : '🔊'}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={playing ? '#fff' : '#c4b5fd'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              {playing
+                ? <line x1="18" y1="9" x2="18" y2="15"/>
+                : <>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                  </>
+              }
+            </svg>
           </button>
         )}
+
         {selectMode && (
           <div style={{ ...s.checkbox, ...(selected ? s.checkboxOn : {}) }}>
             {selected && <span style={s.checkmark}>✓</span>}
           </div>
         )}
-      </div>
-      <div style={s.cardInfo}>
-        <div style={s.cardName}>{m.username}{m.age ? `, ${m.age}` : ''}</div>
-        {m.role && <div style={s.cardRole}>{m.role}</div>}
-        {m.city && <div style={s.cardCity}>📍 {m.city}</div>}
       </div>
     </div>
   )
@@ -256,22 +288,24 @@ const s = {
   card: { background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', cursor: 'pointer', transition: 'border-color 0.15s' },
   cardSelected: { border: '2px solid var(--primary)', background: 'rgba(124,58,237,0.08)' },
 
-  photoWrap: { position: 'relative', width: '100%', aspectRatio: '3/4' },
-  photo: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
+  photoWrap: { position: 'relative', width: '100%', aspectRatio: '3/4', background: '#111' },
+  photo: { width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' },
   photoPlaceholder: { width: '100%', height: '100%', background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48 },
-  statusDot: online => ({ position: 'absolute', bottom: 8, right: 8, width: 12, height: 12, borderRadius: '50%', background: online ? 'var(--online)' : 'var(--away)', border: '2px solid var(--surface)' }),
-  newTag: { position: 'absolute', top: 8, left: 8, background: 'var(--primary)', color: '#fff', fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 8, letterSpacing: 0.5 },
+
+  cardOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.82))', padding: '28px 8px 8px', pointerEvents: 'none' },
+  cardOverlayRow: { display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3, flexWrap: 'wrap' },
+  cardOverlayName: { fontSize: 12, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  roleChip: { fontSize: 9, fontWeight: 800, letterSpacing: 0.6, color: '#c4b5fd', background: 'rgba(124,58,237,0.55)', border: '1px solid rgba(196,181,253,0.4)', borderRadius: 6, padding: '2px 6px', textTransform: 'uppercase' },
+  distChip: { fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.7)', letterSpacing: 0.3 },
+
+  statusDot: online => ({ position: 'absolute', bottom: 38, right: 8, width: 10, height: 10, borderRadius: '50%', background: online ? '#22C55E' : 'rgba(255,255,255,0.25)', border: '2px solid rgba(0,0,0,0.5)' }),
+  newTag: { position: 'absolute', top: 8, left: 8, background: 'var(--primary)', color: '#fff', fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 8, letterSpacing: 0.5 },
   boostBadge: { position: 'absolute', top: 8, right: 8, fontSize: 16 },
-  speakerBtn: { position: 'absolute', top: 8, right: 8, width: 32, height: 32, borderRadius: '50%', background: 'rgba(0,0,0,0.55)', border: '1.5px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, cursor: 'pointer', zIndex: 10, transition: 'transform 0.15s, background 0.15s' },
-  speakerBtnPlaying: { background: 'rgba(124,58,237,0.75)', border: '1.5px solid var(--primary-light)', transform: 'scale(1.1)' },
+  speakerBtn: { position: 'absolute', top: 8, right: 8, width: 30, height: 30, borderRadius: '50%', background: 'rgba(88,28,220,0.75)', border: '1.5px solid rgba(196,181,253,0.6)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10, transition: 'transform 0.15s, background 0.15s' },
+  speakerBtnPlaying: { background: 'rgba(124,58,237,0.95)', border: '1.5px solid #c4b5fd', transform: 'scale(1.12)' },
   checkbox: { position: 'absolute', top: 8, left: 8, width: 26, height: 26, borderRadius: '50%', border: '2px solid #fff', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   checkboxOn: { background: 'var(--primary)', border: '2px solid var(--primary-light)' },
   checkmark: { color: '#fff', fontSize: 14, fontWeight: 700 },
-
-  cardInfo: { padding: '8px 10px 10px' },
-  cardName: { fontWeight: 700, fontSize: 13, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-  cardRole: { fontSize: 11, color: 'var(--primary-light)', fontWeight: 600, marginTop: 2 },
-  cardCity: { fontSize: 11, color: 'var(--text-dim)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
 
   multiplierFab: { position: 'absolute', bottom: 60, right: 14, width: 54, height: 54, borderRadius: '50%', background: 'linear-gradient(135deg, #4C1D95, var(--primary))', boxShadow: '0 4px 20px rgba(124,58,237,0.6)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', zIndex: 100 },
   fabX: { color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: 700, lineHeight: 1 },

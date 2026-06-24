@@ -16,6 +16,7 @@ import VoiceDropScreen from './screens/VoiceDropScreen'
 import ResetPasswordScreen from './screens/ResetPasswordScreen'
 import CypherScreen    from './screens/CypherScreen'
 import OAuthCallbackScreen from './screens/OAuthCallbackScreen'
+import BlockedScreen   from './screens/BlockedScreen'
 import Layout          from './components/Layout'
 
 function Guard({ children }) {
@@ -42,6 +43,7 @@ export default function App() {
       <Route path="/premium"    element={<Guard><Layout><PremiumScreen /></Layout></Guard>} />
       <Route path="/voicedrop"  element={<Guard><Layout><VoiceDropScreen /></Layout></Guard>} />
       <Route path="/cypher"     element={<Guard><Layout><CypherScreen /></Layout></Guard>} />
+      <Route path="/blocked"    element={<Guard><Layout><BlockedScreen /></Layout></Guard>} />
     </Routes>
   )
 }

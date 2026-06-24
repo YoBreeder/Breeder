@@ -9,9 +9,12 @@ export default function MemberScreen() {
   const nav = useNavigate()
   const [member, setMember] = useState(null)
   const [faved, setFaved] = useState(false)
+  const [blocked, setBlocked] = useState(false)
+  const [blocking, setBlocking] = useState(false)
 
   useEffect(() => {
     api.get(`/members/${id}`).then(r => setMember(r.data)).catch(() => {})
+    api.get(`/blocks/${id}`).then(r => setBlocked(r.data.blocked)).catch(() => {})
   }, [id])
 
   const toggleFav = async () => {
@@ -19,6 +22,22 @@ export default function MemberScreen() {
       if (faved) { await api.delete(`/profile/favorites/${id}`); setFaved(false) }
       else        { await api.post(`/profile/favorites/${id}`);   setFaved(true) }
     } catch {}
+  }
+
+  const toggleBlock = async () => {
+    setBlocking(true)
+    try {
+      if (blocked) {
+        await api.delete(`/blocks/${id}`)
+        setBlocked(false)
+      } else {
+        if (!window.confirm(`Block ${member?.username}? They won't see you and you won't see them.`)) { setBlocking(false); return }
+        await api.post(`/blocks/${id}`)
+        setBlocked(true)
+        nav(-1)
+      }
+    } catch {}
+    setBlocking(false)
   }
 
   if (!member) return <div style={s.loading}>Loading…</div>
@@ -56,6 +75,9 @@ export default function MemberScreen() {
             {faved ? '★' : '☆'}
           </button>
         </div>
+        <button style={{ ...s.blockBtn, ...(blocked ? s.blockBtnActive : {}) }} onClick={toggleBlock} disabled={blocking}>
+          {blocked ? '🚫 Unblock user' : '🚫 Block user'}
+        </button>
       </div>
     </div>
   )
@@ -82,4 +104,6 @@ const s = {
   msgBtn: { flex: 1, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: '#fff', borderRadius: 14, padding: '14px', fontSize: 15, fontWeight: 700 },
   favBtn: { width: 50, height: 50, borderRadius: 14, background: 'var(--surface2)', border: '1px solid var(--border)', fontSize: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)' },
   favActive: { color: '#EAB308', borderColor: '#EAB308', background: 'rgba(234,179,8,0.1)' },
+  blockBtn: { marginTop: 12, width: '100%', padding: '12px', borderRadius: 14, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', color: '#F87171', fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s' },
+  blockBtnActive: { background: 'rgba(239,68,68,0.15)', border: '1px solid #EF4444', color: '#EF4444' },
 }

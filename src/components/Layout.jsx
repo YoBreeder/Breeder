@@ -196,6 +196,7 @@ export default function Layout({ children }) {
           <NavBtn icon="🎙️" label={tr.voicedrop}  active={active('/voicedrop')} onClick={() => nav('/voicedrop')} />
           <NavBtn icon="✦"   label="Cypher QI"     active={active('/cypher')}    onClick={() => nav('/cypher')} />
           <NavBtn icon="×5"  label={tr.multiplier} active={false}              onClick={() => nav('/members')} />
+          <NavBtn icon="🚫"  label="Blocked"       active={active('/blocked')}  onClick={() => nav('/blocked')} />
           <NavBtn icon="⚙️" label={tr.settings}   active={false}               onClick={() => nav('/profile')} />
         </nav>
 
