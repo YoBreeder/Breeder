@@ -1,9 +1,17 @@
 import { create } from 'zustand'
 
+const APP_VERSION = '2'
+
 const ls = {
   get: (k, fallback = null) => { try { return localStorage.getItem(k) } catch { return fallback } },
   set: (k, v) => { try { localStorage.setItem(k, v) } catch {} },
   remove: (k) => { try { localStorage.removeItem(k) } catch {} },
+}
+
+// Wipe stale data from old app versions — forces clean re-login
+if (ls.get('yob_version') !== APP_VERSION) {
+  try { localStorage.clear() } catch {}
+  ls.set('yob_version', APP_VERSION)
 }
 
 const useStore = create((set) => ({

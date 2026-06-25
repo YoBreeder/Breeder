@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
+    <!-- Brand font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet" />
+
     <!-- PWA manifest -->
     <link rel="manifest" href="/manifest.json" />
 
@@ -34,13 +39,12 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
+      // Unregister all service workers and clear caches — PWA install still works without SW
       if ('serviceWorker' in navigator) {
-        // Unregister all old service workers first, then register fresh
-        navigator.serviceWorker.getRegistrations().then(regs => {
-          Promise.all(regs.map(r => r.unregister())).then(() => {
-            navigator.serviceWorker.register('/sw.js').catch(() => {})
-          })
-        })
+        navigator.serviceWorker.getRegistrations().then(regs =>
+          Promise.all(regs.map(r => r.unregister()))
+        )
+        caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
       }
     </script>
   </body>

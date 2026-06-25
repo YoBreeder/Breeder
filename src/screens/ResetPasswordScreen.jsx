@@ -74,8 +74,8 @@ export default function ResetPasswordScreen() {
 const s = {
   root: { minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 20px', background: 'linear-gradient(160deg, #0D0B1E 0%, #1a0533 100%)' },
   logo: { marginBottom: 12 },
-  yo: { fontSize: 32, fontWeight: 900, color: '#fff' },
-  br: { fontSize: 32, fontWeight: 900, color: '#A78BFA' },
+  yo: { fontSize: 32, fontWeight: 800, color: '#fff', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-1px' },
+  br: { fontSize: 32, fontWeight: 800, color: '#A78BFA', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-1px' },
   title: { fontSize: 22, fontWeight: 700, color: '#F0EEFF', marginBottom: 24 },
   form: { display: 'flex', flexDirection: 'column', gap: 14, width: '100%', maxWidth: 380 },
   passRow: { display: 'flex', alignItems: 'center', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' },

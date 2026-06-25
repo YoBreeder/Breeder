@@ -299,6 +299,8 @@ export default function LandingScreen() {
     <div style={s.root}>
       <style>{`
         @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes bullWalk { 0% { transform: translateX(0) scaleX(1); } 100% { transform: translateX(-50%) scaleX(1); } }
+        @keyframes bullBounce { 0%,100% { margin-top: 0px; } 50% { margin-top: -5px; } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); } 50% { box-shadow: 0 0 0 7px rgba(34,197,94,0); } }
@@ -315,12 +317,10 @@ export default function LandingScreen() {
           40%  { color: #e9d5ff;               transform: scale(1.2);  text-shadow: 0 0 10px rgba(167,139,250,0.7); }
           100% { color: rgba(167,139,250,0.6); transform: scale(1);    text-shadow: none; }
         }
-        @keyframes bullGreet {
-          0%   { transform: scale(1) scaleX(1);    filter: none; }
-          20%  { transform: scale(1.4) scaleX(-1); filter: drop-shadow(0 0 10px rgba(167,139,250,0.9)); }
-          55%  { transform: scale(1.55) scaleX(-1); filter: drop-shadow(0 0 18px rgba(124,58,237,1)); }
-          80%  { transform: scale(1.2) scaleX(1);  filter: drop-shadow(0 0 8px rgba(167,139,250,0.5)); }
-          100% { transform: scale(1) scaleX(1);    filter: none; }
+        @keyframes bullThrust {
+          0%        { transform: scale(1)    rotate(0deg)  translateY(0px);  }
+          40%, 60%  { transform: scale(1.11) rotate(16deg) translateY(6px);  }
+          100%      { transform: scale(1)    rotate(0deg)  translateY(0px);  }
         }
         @keyframes cardGlow {
           0%,100% { box-shadow: 0 0 0 0 transparent; border-color: inherit; }
@@ -363,31 +363,18 @@ export default function LandingScreen() {
       <div style={s.content}>
         {/* Logo */}
         <div style={s.logoWrap}>
-          <div style={{ ...s.logoIcon, animation: bullAnim ? 'bullGreet 1.4s ease forwards' : 'none' }}>🐂</div>
+          <div style={{ ...s.logoIcon, animation: 'bullThrust 22s ease-in-out infinite' }}>🐂</div>
           <div style={s.logoText}>
             <span style={s.yo}>Yo</span><span style={s.breeders}>Breeder</span>
           </div>
           <div style={s.tagline}>{tr.tagline}</div>
-          <div style={s.communityTags}>
-            {['RAW', 'REAL', 'DC'].map(tag => (
-              <span key={tag} style={{ ...s.communityTag, animation: litTag === tag.toLowerCase() ? 'tagGlow 1.6s ease forwards' : 'none' }}>{tag}</span>
-            ))}
-          </div>
-          <div style={s.micRow} onClick={handleMicTap}>
-            <span style={{
-              ...s.micDot,
-              background: listening ? '#22C55E' : '#F59E0B',
-              animation: listening ? 'pulse 1.5s infinite' : 'none',
-              boxShadow: listening ? '0 0 6px #22C55E' : '0 0 4px #F59E0B',
-            }} />
-            <span style={s.micLabel}>{listening ? 'Listening…' : '🎙️ Tap to enable voice'}</span>
-          </div>
         </div>
 
         {/* Role selector */}
         <div>
           <div style={s.sayItHint}>
-            <span style={s.sayItMain}>🎙️ say it</span>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', display: 'inline-block', flexShrink: 0, background: listening ? '#22C55E' : '#F59E0B', boxShadow: listening ? '0 0 5px #22C55E' : '0 0 4px #F59E0B', animation: listening ? 'pulse 1.5s infinite' : 'none' }} onClick={handleMicTap} />
+            <span style={s.sayItMain}>say it</span>
             <span style={s.sayItSep}>·</span>
             <span style={s.sayItOr}>or tap below</span>
           </div>
@@ -421,9 +408,9 @@ export default function LandingScreen() {
 
         {/* Feature cards */}
         <div style={s.cards}>
-          <FeatureCard icon="👥" title={tr.featureGrid}       desc={tr.featureGridDesc}       accent="#7C3AED" lit={litCard === 0} />
-          <FeatureCard icon="🗺️" title={tr.featureMap}        desc={tr.featureMapDesc}         accent="#3B82F6" lit={litCard === 1} />
-          <FeatureCard icon="×5"  title={tr.featureMultiplier} desc={tr.featureMultiplierDesc}  accent="#A78BFA" premium lit={litCard === 2} />
+          <FeatureCard icon="✦"  title="Cypher QI"      desc="Quantum Intelligence"                                accent="#7C3AED" lit={litCard === 0} />
+          <FeatureCard icon="✦"  title="Cypher Party"   desc="3-way. 4-way. 5-way. AI selects the individuals, arranges it — you just approve."  accent="#F59E0B" premium lit={litCard === 1} />
+          <FeatureCard icon="×5" title="×5 Multiplier"  desc="Message 5 guys in one tap."                        accent="#A78BFA" premium lit={litCard === 2} />
         </div>
 
         {shakeRole && (
@@ -481,6 +468,7 @@ export default function LandingScreen() {
   )
 }
 
+
 function FeatureCard({ icon, title, desc, accent, premium, lit }) {
   return (
     <div style={{
@@ -503,8 +491,10 @@ const s = {
   content: { width: '100%', maxWidth: 420, position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 12 },
 
   logoWrap: { textAlign: 'center', paddingTop: 4 },
-  logoIcon: { fontSize: 36, marginBottom: 2 },
-  logoText: { fontSize: 34, fontWeight: 900, lineHeight: 1 },
+  logoIcon: { fontSize: 52, marginBottom: 2 },
+  logoText: { fontSize: 34, fontWeight: 800, lineHeight: 1, fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-1px' },
+  dotCom: { fontSize: 12, fontWeight: 300, color: 'rgba(167,139,250,0.45)', letterSpacing: '0.5px', verticalAlign: 'baseline', fontFamily: "'Space Grotesk', sans-serif", marginLeft: 1 },
+  urlBar: { fontSize: 10, fontWeight: 300, color: 'rgba(255,255,255,0.2)', letterSpacing: '2px', fontFamily: "'Space Grotesk', sans-serif", marginTop: 2, marginBottom: 0 },
   yo: { color: '#fff' },
   breeders: { color: 'var(--primary-light)' },
   tagline: { fontSize: 11, color: 'var(--text-dim)', marginTop: 4, letterSpacing: 2, textTransform: 'uppercase', fontWeight: 600 },

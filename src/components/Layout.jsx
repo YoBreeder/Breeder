@@ -62,7 +62,7 @@ function useAlwaysOnVoice(nav, setListening, setLitWord) {
 
     const fire = (cmd, fn) => {
       const now = Date.now()
-      if (lastCmdRef.current.cmd === cmd && now - lastCmdRef.current.time < 500) return
+      if (lastCmdRef.current.cmd === cmd && now - lastCmdRef.current.time < 180) return
       lastCmdRef.current = { cmd, time: now }
       fn()
     }
@@ -116,12 +116,12 @@ function useAlwaysOnVoice(nav, setListening, setLitWord) {
       if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
         setListening(false)
       } else {
-        setTimeout(() => start(), 800)
+        setTimeout(() => start(), 250)
       }
     }
     recog.onend = () => {
       activeRef.current = false
-      setTimeout(() => start(), 800)
+      setTimeout(() => start(), 250)
     }
     recogRef.current = recog
     activeRef.current = true
@@ -129,9 +129,17 @@ function useAlwaysOnVoice(nav, setListening, setLitWord) {
   }
 
   useEffect(() => {
-    setListening(true) // show green immediately
-    start()
+    // Wait for first user interaction — avoids browser mic-start sounds on mobile
+    const onInteract = () => {
+      document.removeEventListener('click', onInteract)
+      document.removeEventListener('touchstart', onInteract)
+      start()
+    }
+    document.addEventListener('click', onInteract)
+    document.addEventListener('touchstart', onInteract)
     return () => {
+      document.removeEventListener('click', onInteract)
+      document.removeEventListener('touchstart', onInteract)
       try { recogRef.current?.abort() } catch {}
       try { audioCtxRef.current?.close() } catch {}
       if (litTimerRef.current) clearTimeout(litTimerRef.current)
@@ -159,7 +167,7 @@ export default function Layout({ children }) {
   const active = path => pathname === path
   const unread = useUnreadCount()
   const tr = useT()
-  const [listening, setListening] = useState(true)
+  const [listening, setListening] = useState(false)
   const [litWord, setLitWord] = useState(null)
   useAlwaysOnVoice(nav, setListening, setLitWord)
 
@@ -277,8 +285,8 @@ const s = {
   menuBtn: { fontSize: 22, color: '#fff', width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' },
   logo: { cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 },
   listeningDot: { width: 8, height: 8, borderRadius: '50%', display: 'inline-block', transition: 'background 0.4s, box-shadow 0.4s' },
-  yo: { fontSize: 22, fontWeight: 900, color: '#fff' },
-  br: { fontSize: 22, fontWeight: 900, color: 'rgba(255,255,255,0.75)' },
+  yo: { fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.5px' },
+  br: { fontSize: 22, fontWeight: 800, color: 'rgba(255,255,255,0.75)', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-0.5px' },
   avatarBtn: { width: 42, height: 42, borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.4)', background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   avatar: { fontSize: 20 },
 

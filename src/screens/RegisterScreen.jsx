@@ -131,6 +131,7 @@ export default function RegisterScreen() {
             max={new Date().toISOString().split('T')[0]}
             required
           />
+          <div style={s.dobHint}>👆 Tap the year on the left to jump to your birth year</div>
           {age !== null && (
             <div style={{ ...s.ageDisplay, ...(tooYoung ? s.ageDisplayError : {}) }}>
               {tooYoung
@@ -154,8 +155,8 @@ const s = {
   root: { minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 20px', background: 'linear-gradient(160deg, #0D0B1E 0%, #1a0533 100%)' },
   back: { alignSelf: 'flex-start', color: 'var(--text-dim)', fontSize: 14, cursor: 'pointer', marginBottom: 16 },
   logo: { marginBottom: 8 },
-  logoYo: { fontSize: 32, fontWeight: 900, color: 'var(--text)' },
-  logoBr: { fontSize: 32, fontWeight: 900, color: 'var(--primary-light)' },
+  logoYo: { fontSize: 32, fontWeight: 800, color: 'var(--text)', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-1px' },
+  logoBr: { fontSize: 32, fontWeight: 800, color: 'var(--primary-light)', fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-1px' },
   title: { fontSize: 20, fontWeight: 600, color: 'var(--text-dim)', marginBottom: 28 },
   form: { display: 'flex', flexDirection: 'column', gap: 14, width: '100%', maxWidth: 380 },
   error: { color: '#F87171', fontSize: 14, textAlign: 'center' },
@@ -168,6 +169,7 @@ const s = {
   eyeBtn: { padding: '0 14px', fontSize: 18, background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, opacity: 0.7 },
 
   dobWrap: { display: 'flex', flexDirection: 'column', gap: 6 },
+  dobHint: { fontSize: 11, color: 'rgba(167,139,250,0.6)', paddingLeft: 2, letterSpacing: 0.2 },
   dobLabel: { fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', letterSpacing: 1, textTransform: 'uppercase', paddingLeft: 2 },
   dobInput: { borderRadius: 12, border: '1.5px solid var(--border)', background: 'var(--surface2)', padding: '12px 14px', fontSize: 15, color: 'var(--text)', width: '100%', boxSizing: 'border-box' },
   dobError: { borderColor: '#F87171' },
