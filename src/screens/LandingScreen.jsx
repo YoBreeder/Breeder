@@ -79,8 +79,16 @@ export default function LandingScreen() {
   useEffect(() => { showTermsRef.current = showTerms }, [showTerms])
 
   useEffect(() => {
-    startListening()
+    const onInteract = () => {
+      document.removeEventListener('click', onInteract)
+      document.removeEventListener('touchstart', onInteract)
+      startListening()
+    }
+    document.addEventListener('click', onInteract)
+    document.addEventListener('touchstart', onInteract)
     return () => {
+      document.removeEventListener('click', onInteract)
+      document.removeEventListener('touchstart', onInteract)
       try { recogRef.current?.abort() } catch {}
       try { audioCtxRef.current?.close() } catch {}
       if (litTimerRef.current) clearTimeout(litTimerRef.current)
@@ -98,27 +106,10 @@ export default function LandingScreen() {
     }, delay)
   }
 
-  const keepAudioAlive = () => {
-    try {
-      if (audioCtxRef.current) return
-      const AC = window.AudioContext || window.webkitAudioContext
-      if (!AC) return
-      const ctx = new AC()
-      const gain = ctx.createGain()
-      gain.gain.value = 0 // completely silent
-      const osc = ctx.createOscillator()
-      osc.connect(gain)
-      gain.connect(ctx.destination)
-      osc.start()
-      audioCtxRef.current = ctx
-    } catch {}
-  }
-
   const startListening = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SR) return
     if (startedRef.current) return // already running, don't restart
-    keepAudioAlive()
     try { recogRef.current?.abort() } catch {}
 
     const recog = new SR()

@@ -33,26 +33,9 @@ function useAlwaysOnVoice(nav, setListening, setLitWord) {
   const litTimerRef = useRef(null)
   const lastCmdRef = useRef({ cmd: '', time: 0 })
 
-  const keepAudioAlive = () => {
-    try {
-      if (audioCtxRef.current) return
-      const AC = window.AudioContext || window.webkitAudioContext
-      if (!AC) return
-      const ctx = new AC()
-      const gain = ctx.createGain()
-      gain.gain.value = 0
-      const osc = ctx.createOscillator()
-      osc.connect(gain)
-      gain.connect(ctx.destination)
-      osc.start()
-      audioCtxRef.current = ctx
-    } catch {}
-  }
-
   const start = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SR || activeRef.current) return
-    keepAudioAlive()
     const recog = new SR()
     recog.lang = 'en-US'
     recog.continuous = true
