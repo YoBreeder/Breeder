@@ -131,7 +131,7 @@ export default function RegisterScreen() {
             max={new Date().toISOString().split('T')[0]}
             required
           />
-          <div style={s.dobHint}>👆 Tap the year on the left to jump to your birth year</div>
+          <div style={s.dobHint}>👆 Tap the year in the upper left corner of this screen to jump to your birth year</div>
           {age !== null && (
             <div style={{ ...s.ageDisplay, ...(tooYoung ? s.ageDisplayError : {}) }}>
               {tooYoung
