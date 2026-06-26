@@ -79,16 +79,8 @@ export default function LandingScreen() {
   useEffect(() => { showTermsRef.current = showTerms }, [showTerms])
 
   useEffect(() => {
-    const onInteract = () => {
-      document.removeEventListener('click', onInteract)
-      document.removeEventListener('touchstart', onInteract)
-      startListening()
-    }
-    document.addEventListener('click', onInteract)
-    document.addEventListener('touchstart', onInteract)
+    startListening()
     return () => {
-      document.removeEventListener('click', onInteract)
-      document.removeEventListener('touchstart', onInteract)
       try { recogRef.current?.abort() } catch {}
       try { audioCtxRef.current?.close() } catch {}
       if (litTimerRef.current) clearTimeout(litTimerRef.current)
