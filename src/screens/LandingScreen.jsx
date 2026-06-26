@@ -403,9 +403,9 @@ export default function LandingScreen() {
 
         {/* Feature cards */}
         <div style={s.cards}>
-          <FeatureCard icon="🎉"  title="Fun Groups"    desc="3-way. 4-way. 5-way. AI builds it — you just approve."  accent="#F59E0B" premium lit={litCard === 0} />
-          <FeatureCard icon="✦"  title="Cypher"         desc="Let Cypher do all the work."                            accent="#7C3AED" lit={litCard === 1} />
-          <FeatureCard icon="×5" title="×5 Multiplier"  desc="Message 5 guys in one tap."                             accent="#A78BFA" premium lit={litCard === 2} />
+          <FeatureCard icon="🎉"  title="Fun Groups"  desc="3-way. 4-way. 5-way. yoBreeder builds your group — you just approve." accent="#F59E0B" premium lit={litCard === 0} />
+          <FeatureCard icon="✦"  title="Cypher QI"  desc="Quantum Intelligence. Let Cypher do all the work."                         accent="#7C3AED" lit={litCard === 1} />
+          <FeatureCard icon="✦"  title="Cypher"     desc="Your AI matchmaker — smarter every swipe."                                  accent="#A78BFA" lit={litCard === 2} />
         </div>
 
         {shakeRole && (
