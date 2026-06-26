@@ -178,8 +178,8 @@ export default function Layout({ children }) {
       <div style={s.body}>
         {/* Scrollable side rail */}
         <nav style={s.rail}>
-          <NavBtn icon="👥" label={tr.members}    active={active('/members')}   onClick={() => nav('/members')} />
-          <NavBtn icon="📍" label={tr.map}        active={active('/map')}       onClick={() => nav('/map')} />
+          <NavBtn icon="🎉" label="Fun Groups"    active={active('/cypher')}    onClick={() => nav('/cypher')} />
+          <NavBtn icon="✦"  label="Cypher"        active={active('/cypher')}    onClick={() => nav('/cypher')} />
           <NavBtn icon="👁"  label={tr.views}     active={active('/views')}     onClick={() => nav('/views')} />
           <NavBtn icon="💬" label={tr.inbox}      active={active('/messages')}  onClick={() => nav('/messages')} badge={unread} />
           <NavBtn icon="👤" label={tr.profile}    active={active('/profile')}   onClick={() => nav('/profile')} />

@@ -190,10 +190,10 @@ export default function LandingScreen() {
       }
 
       // ── Feature card illumination ─────────────────────────────────
-      if (said.includes('member grid') || said.includes('members grid')) {
+      if (said.includes('fun group') || said.includes('fun groups') || said.includes('party') || said.includes('three way') || said.includes('four way') || said.includes('five way')) {
         fire('card0', () => flashCard(0)); return
       }
-      if (said.includes('live map') || said.includes('life map')) {
+      if (said.includes('cypher') || said.includes('cipher') || said.includes('quantum')) {
         fire('card1', () => flashCard(1)); return
       }
       if (said.includes('multiplier') || said.includes('times five') || said.includes('times 5') || said.includes('x5')) {
@@ -300,10 +300,19 @@ export default function LandingScreen() {
           40%  { color: #e9d5ff;               transform: scale(1.2);  text-shadow: 0 0 10px rgba(167,139,250,0.7); }
           100% { color: rgba(167,139,250,0.6); transform: scale(1);    text-shadow: none; }
         }
-        @keyframes bullThrust {
-          0%        { transform: scale(1)    rotate(0deg)  translateY(0px);  }
-          40%, 60%  { transform: scale(1.11) rotate(16deg) translateY(6px);  }
-          100%      { transform: scale(1)    rotate(0deg)  translateY(0px);  }
+        @keyframes bullStrut {
+          0%   { transform: translateY(0px) rotate(-2deg); }
+          25%  { transform: translateY(-5px) rotate(2deg); }
+          50%  { transform: translateY(0px) rotate(-2deg); }
+          75%  { transform: translateY(-5px) rotate(2deg); }
+          100% { transform: translateY(0px) rotate(-2deg); }
+        }
+        @keyframes calfStrut {
+          0%   { transform: translateY(0px) rotate(2deg); }
+          25%  { transform: translateY(-4px) rotate(-2deg); }
+          50%  { transform: translateY(0px) rotate(2deg); }
+          75%  { transform: translateY(-4px) rotate(-2deg); }
+          100% { transform: translateY(0px) rotate(2deg); }
         }
         @keyframes cardGlow {
           0%,100% { box-shadow: 0 0 0 0 transparent; border-color: inherit; }
@@ -346,7 +355,10 @@ export default function LandingScreen() {
       <div style={s.content}>
         {/* Logo */}
         <div style={s.logoWrap}>
-          <div style={{ ...s.logoIcon, animation: 'bullThrust 22s ease-in-out infinite' }}>🐂</div>
+          <div style={s.bullPair}>
+            <span style={{ fontSize: 44, display: 'inline-block', animation: 'bullStrut 1.8s ease-in-out infinite' }}>🐂</span>
+            <span style={{ fontSize: 30, display: 'inline-block', animation: 'calfStrut 1.8s ease-in-out infinite 0.4s', transform: 'scaleX(-1)' }}>🐄</span>
+          </div>
           <div style={s.logoText}>
             <span style={s.yo}>Yo</span><span style={s.breeders}>Breeder</span>
           </div>
@@ -391,9 +403,9 @@ export default function LandingScreen() {
 
         {/* Feature cards */}
         <div style={s.cards}>
-          <FeatureCard icon="✦"  title="Cypher QI"      desc="Quantum Intelligence"                                accent="#7C3AED" lit={litCard === 0} />
-          <FeatureCard icon="✦"  title="Cypher Party"   desc="3-way. 4-way. 5-way. AI selects the individuals, arranges it — you just approve."  accent="#F59E0B" premium lit={litCard === 1} />
-          <FeatureCard icon="×5" title="×5 Multiplier"  desc="Message 5 guys in one tap."                        accent="#A78BFA" premium lit={litCard === 2} />
+          <FeatureCard icon="🎉"  title="Fun Groups"    desc="3-way. 4-way. 5-way. AI builds it — you just approve."  accent="#F59E0B" premium lit={litCard === 0} />
+          <FeatureCard icon="✦"  title="Cypher"         desc="Let Cypher do all the work."                            accent="#7C3AED" lit={litCard === 1} />
+          <FeatureCard icon="×5" title="×5 Multiplier"  desc="Message 5 guys in one tap."                             accent="#A78BFA" premium lit={litCard === 2} />
         </div>
 
         {shakeRole && (
@@ -474,6 +486,7 @@ const s = {
   content: { width: '100%', maxWidth: 420, position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 12 },
 
   logoWrap: { textAlign: 'center', paddingTop: 4 },
+  bullPair: { display: 'inline-flex', alignItems: 'flex-end', gap: 4, marginBottom: 2 },
   logoIcon: { fontSize: 52, marginBottom: 2 },
   logoText: { fontSize: 34, fontWeight: 800, lineHeight: 1, fontFamily: "'Space Grotesk', sans-serif", letterSpacing: '-1px' },
   dotCom: { fontSize: 12, fontWeight: 300, color: 'rgba(167,139,250,0.45)', letterSpacing: '0.5px', verticalAlign: 'baseline', fontFamily: "'Space Grotesk', sans-serif", marginLeft: 1 },
