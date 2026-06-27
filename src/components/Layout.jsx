@@ -192,7 +192,7 @@ export default function Layout({ children }) {
           <NavBtn icon="👑" label={tr.premium}    active={active('/premium')}   onClick={() => nav('/premium')} />
           <NavBtn icon="🎙️" label={tr.voicedrop}  active={active('/voicedrop')} onClick={() => nav('/voicedrop')} />
           <NavBtn icon="×5"  label={tr.multiplier} active={false}              onClick={() => nav('/members')} />
-          <NavBtn icon="🎉" label="Fun Groups"    active={active('/members')}   onClick={() => nav('/members')} />
+          <NavBtn icon="🎉" label="Fun Groups"    active={active('/cypher')}    onClick={() => nav('/cypher')} />
           <NavBtn icon="🚫"  label="Blocked"       active={active('/blocked')}  onClick={() => nav('/blocked')} />
           <NavBtn icon="⚙️" label={tr.settings}   active={false}               onClick={() => nav('/profile')} />
         </nav>
