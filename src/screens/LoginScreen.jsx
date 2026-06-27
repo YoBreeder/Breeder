@@ -34,6 +34,8 @@ export default function LoginScreen() {
   const voiceModeRef = useRef(null)
   const formRef = useRef(form)
   const lastCmdRef = useRef({ cmd: '', time: 0 })
+  const mountedRef = useRef(true)
+  const restartTimerRef = useRef(null)
 
   useEffect(() => { formRef.current = form }, [form])
   useEffect(() => { voiceModeRef.current = voiceMode }, [voiceMode])
@@ -134,14 +136,14 @@ export default function LoginScreen() {
 
     recog.onerror = (err) => {
       if (err.error === 'not-allowed' || err.error === 'service-not-allowed') setListening(false)
-      else setTimeout(() => { try { recog.start() } catch {} }, 800)
+      else { if (restartTimerRef.current) clearTimeout(restartTimerRef.current); restartTimerRef.current = setTimeout(() => { if (mountedRef.current) try { recog.start() } catch {} }, 800) }
     }
-    recog.onend = () => setTimeout(() => { try { recog.start() } catch {} }, 800)
+    recog.onend = () => { if (restartTimerRef.current) clearTimeout(restartTimerRef.current); restartTimerRef.current = setTimeout(() => { if (mountedRef.current) try { recog.start() } catch {} }, 800) }
 
     recogRef.current = recog
     setListening(true)
     try { recog.start() } catch {}
-    return () => { try { recog.abort() } catch {} }
+    return () => { mountedRef.current = false; if (restartTimerRef.current) clearTimeout(restartTimerRef.current); try { recog.abort() } catch {} }
   }, [forgot])
 
   if (forgot) return (
