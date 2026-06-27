@@ -184,7 +184,7 @@ export default function Layout({ children }) {
       <div style={s.body}>
         {/* Scrollable side rail */}
         <nav style={s.rail}>
-          <NavBtn icon="🎉" label="Fun Groups"    active={active('/members')}   onClick={() => nav('/members')} />
+          <NavBtn icon="👥" label="Browse"         active={active('/members')}   onClick={() => nav('/members')} />
           <NavBtn icon="✦"  label="Cypher"        active={active('/cypher')}    onClick={() => nav('/cypher')} />
           <NavBtn icon="👁"  label={tr.views}     active={active('/views')}     onClick={() => nav('/views')} />
           <NavBtn icon="💬" label={tr.inbox}      active={active('/messages')}  onClick={() => nav('/messages')} badge={unread} />
@@ -192,6 +192,7 @@ export default function Layout({ children }) {
           <NavBtn icon="👑" label={tr.premium}    active={active('/premium')}   onClick={() => nav('/premium')} />
           <NavBtn icon="🎙️" label={tr.voicedrop}  active={active('/voicedrop')} onClick={() => nav('/voicedrop')} />
           <NavBtn icon="×5"  label={tr.multiplier} active={false}              onClick={() => nav('/members')} />
+          <NavBtn icon="🎉" label="Fun Groups"    active={active('/members')}   onClick={() => nav('/members')} />
           <NavBtn icon="🚫"  label="Blocked"       active={active('/blocked')}  onClick={() => nav('/blocked')} />
           <NavBtn icon="⚙️" label={tr.settings}   active={false}               onClick={() => nav('/profile')} />
         </nav>
