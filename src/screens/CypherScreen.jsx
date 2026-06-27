@@ -53,109 +53,217 @@ export default function CypherScreen() {
   )
 }
 
+// ── Cypher conversation steps ─────────────────────────────────────────────
+// greeting → vibe_choice → detail_prompt → listening/typing → thinking → results
+
+function CypherBubble({ text, delay = 0 }) {
+  return (
+    <div style={{ ...c.bubbleRow, animationDelay: `${delay}ms` }}>
+      <div style={c.cypherAvatar}>✦</div>
+      <div style={c.cypherBubble}>{text}</div>
+    </div>
+  )
+}
+
+function UserBubble({ text }) {
+  return (
+    <div style={c.userBubbleRow}>
+      <div style={c.userBubble}>{text}</div>
+    </div>
+  )
+}
+
 function MatchMode({ nav }) {
-  const [phase, setPhase] = useState('idle')
-  const [intent, setIntent] = useState('')
-  const [transcript, setTranscript] = useState('')
+  const [step, setStep] = useState('greeting')   // greeting | detail_prompt | input | thinking | results | error
+  const [vibe, setVibe] = useState('')            // 'casual' | 'serious'
+  const [detail, setDetail] = useState('')
+  const [interim, setInterim] = useState('')
+  const [listening, setListening] = useState(false)
   const [matches, setMatches] = useState([])
   const [summary, setSummary] = useState('')
   const recogRef = useRef(null)
+  const mountedRef = useRef(true)
+  const restartRef = useRef(null)
+  const bottomRef = useRef(null)
 
-  useEffect(() => () => { try { recogRef.current?.abort() } catch {} }, [])
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      if (restartRef.current) clearTimeout(restartRef.current)
+      try { recogRef.current?.abort() } catch {}
+    }
+  }, [])
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [step, matches])
+
+  const pickVibe = (v) => {
+    setVibe(v)
+    setStep('detail_prompt')
+  }
 
   const startVoice = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SR) { setIntent(''); setPhase('idle'); return }
+    if (!SR) return
+    try { recogRef.current?.abort() } catch {}
     const recog = new SR()
-    recog.lang = 'en-US'; recog.interimResults = true; recog.maxAlternatives = 1
+    recog.lang = 'en-US'; recog.continuous = false; recog.interimResults = true; recog.maxAlternatives = 1
+    recog.onstart = () => setListening(true)
     recog.onresult = e => {
       const t = e.results[e.results.length - 1][0].transcript
-      setTranscript(t)
-      if (e.results[e.results.length - 1].isFinal) { setIntent(t); recog.stop() }
+      setInterim(t)
+      if (e.results[e.results.length - 1].isFinal) { setDetail(t); setInterim('') }
     }
-    recog.onend = () => { if (transcript || intent) runMatch(intent || transcript) }
-    recog.onerror = () => setPhase('idle')
+    recog.onend = () => { setListening(false); if (mountedRef.current) setInterim('') }
+    recog.onerror = () => setListening(false)
     recogRef.current = recog
-    recog.start(); setPhase('listening'); setTranscript('')
+    try { recog.start() } catch {}
   }
 
-  const runMatch = async (text) => {
-    if (!text.trim()) { setPhase('idle'); return }
-    setPhase('thinking')
+  const submit = async () => {
+    const text = detail.trim()
+    if (!text) return
+    setStep('thinking')
     try {
-      const { data } = await api.post('/cypher/match', { intent: text })
-      setMatches(data.matches || []); setSummary(data.criteria?.summary || text); setPhase('results')
-    } catch { setPhase('error') }
+      const intent = `${vibe === 'casual' ? 'casual encounter: ' : 'serious connection: '}${text}`
+      const { data } = await api.post('/cypher/match', { intent })
+      if (!mountedRef.current) return
+      setMatches(data.matches || [])
+      setSummary(data.criteria?.summary || text)
+      setStep('results')
+    } catch {
+      if (mountedRef.current) setStep('error')
+    }
   }
 
-  const reset = () => { setPhase('idle'); setIntent(''); setTranscript(''); setMatches([]); setSummary('') }
+  const reset = () => { setStep('greeting'); setVibe(''); setDetail(''); setInterim(''); setMatches([]); setSummary('') }
 
   return (
-    <>
-      <div style={s.orbWrap}>
-        <div style={{ ...s.orb, ...(phase === 'listening' ? s.orbListening : {}), ...(phase === 'thinking' ? s.orbThinking : {}), ...(phase === 'results' ? s.orbDone : {}) }}
-          onClick={phase === 'idle' ? startVoice : phase === 'results' ? reset : undefined}>
-          {phase === 'idle'      && <span style={s.orbIcon}>🎙️</span>}
-          {phase === 'listening' && <span style={s.orbIcon}>👂</span>}
-          {phase === 'thinking'  && <div style={s.spinner} />}
-          {phase === 'results'   && <span style={s.orbIcon}>✦</span>}
-          {phase === 'error'     && <span style={s.orbIcon}>⚠️</span>}
-          {phase === 'thinking'  && <div style={s.scanLine} />}
-        </div>
-        <div style={s.orbLabel}>
-          {phase === 'idle'      && 'Tap orb and speak your intent'}
-          {phase === 'listening' && (transcript || 'Listening…')}
-          {phase === 'thinking'  && 'Cypher QI is analyzing…'}
-          {phase === 'results'   && `✦ ${matches.length} matches found · tap to reset`}
-          {phase === 'error'     && 'Could not connect · try again'}
-        </div>
-      </div>
+    <div style={c.chat}>
 
-      {phase === 'idle' && (
-        <div style={s.textFallback}>
-          <input style={s.textInput} placeholder='Or type what you are looking for...'
-            value={intent} onChange={e => setIntent(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && intent.trim() && runMatch(intent)} />
-          {intent.trim() && <button style={s.goBtn} onClick={() => runMatch(intent)}>Find matches ✦</button>}
+      {/* Cypher greeting */}
+      <CypherBubble text="Hi! This is Cypher, and I'll be your matching guide." delay={0} />
+      <CypherBubble text="So let's see — are you looking for something casual or something more serious?" delay={120} />
+
+      {/* Vibe choice */}
+      {step === 'greeting' && (
+        <div style={c.choiceRow}>
+          <button style={c.choiceBtn} onClick={() => pickVibe('casual')}>Casual</button>
+          <button style={c.choiceBtn} onClick={() => pickVibe('serious')}>More Serious</button>
         </div>
       )}
 
-      {phase === 'results' && summary && (
-        <div style={s.summaryBox}>
-          <span style={s.summaryLabel}>Cypher understood: </span>
-          <span style={s.summaryText}>"{summary}"</span>
+      {/* User picked */}
+      {vibe !== '' && <UserBubble text={vibe === 'casual' ? 'Casual' : 'More Serious'} />}
+
+      {/* Cypher follow-up */}
+      {(step === 'detail_prompt' || step === 'input' || step === 'thinking' || step === 'results' || step === 'error') && (
+        <CypherBubble
+          text={vibe === 'casual'
+            ? "Can you give me some details about what you're looking for when it comes to your next encounter? Don't be shy — you can be as detailed as you like."
+            : "Tell me a bit about what you're looking for in a more serious connection. What matters most to you?"}
+          delay={0}
+        />
+      )}
+
+      {/* User's detail reply */}
+      {detail !== '' && <UserBubble text={detail} />}
+
+      {/* Input area */}
+      {(step === 'detail_prompt' || step === 'input') && (
+        <div style={c.inputWrap}>
+          <div style={c.inputRow}>
+            <textarea
+              style={c.textarea}
+              placeholder={listening ? (interim || 'Listening…') : 'Type or tap the mic…'}
+              value={listening ? interim : detail}
+              onChange={e => { if (!listening) setDetail(e.target.value) }}
+              rows={3}
+            />
+            <button
+              style={{ ...c.micBtn, ...(listening ? c.micBtnActive : {}) }}
+              onClick={startVoice}
+            >🎙️</button>
+          </div>
+          {(detail.trim() || interim.trim()) && !listening && (
+            <button style={c.sendBtn} onClick={submit}>Find my match ✦</button>
+          )}
         </div>
       )}
 
-      {phase === 'results' && matches.length === 0 && (
-        <div style={s.noMatches}>No matches found right now. Try broadening your search.</div>
+      {/* Thinking */}
+      {step === 'thinking' && (
+        <div style={c.thinkingRow}>
+          <div style={c.cypherAvatar}>✦</div>
+          <div style={c.thinkingBubble}>
+            <div style={c.dot} /><div style={c.dot} /><div style={c.dot} />
+          </div>
+        </div>
       )}
 
-      {phase === 'results' && matches.length > 0 && (
-        <div style={s.matchList}>
-          {matches.map((m, i) => (
-            <div key={m.id} style={{ ...s.matchCard, animationDelay: `${i * 60}ms` }} onClick={() => nav(`/members/${m.id}`)}>
-              <div style={s.matchRank}>#{i + 1}</div>
-              <div style={s.matchAvatar}>
-                {m.photos?.[0] ? <img src={m.photos[0]} alt="" style={s.matchPhoto} /> : <div style={s.matchAvatarFallback}>👤</div>}
-                {m.is_online && <div style={s.onlineDot} />}
-              </div>
-              <div style={s.matchInfo}>
-                <div style={s.matchName}>{m.username}</div>
-                <div style={s.matchMeta}>{m.role} · {m.age ? `${m.age}yo` : ''}{m.distance_miles != null ? ` · ${m.distance_miles}mi` : ''}{m.city ? ` · ${m.city}` : ''}</div>
-              </div>
-              <div style={s.matchScore}>
-                <div style={s.scoreBar}><div style={{ ...s.scoreFill, width: `${Math.min(100, m.score)}%` }} /></div>
-                <div style={s.scoreLabel}>{m.score}%</div>
-              </div>
+      {/* Results */}
+      {step === 'results' && (
+        <>
+          <CypherBubble text={matches.length > 0 ? `Found ${matches.length} match${matches.length > 1 ? 'es' : ''} for you ✦` : 'No matches right now — try broadening your details.'} />
+          {summary && (
+            <div style={s.summaryBox}>
+              <span style={s.summaryLabel}>Cypher understood: </span>
+              <span style={s.summaryText}>"{summary}"</span>
             </div>
-          ))}
-        </div>
+          )}
+          <div style={s.matchList}>
+            {matches.map((m, i) => (
+              <div key={m.id} style={{ ...s.matchCard, animationDelay: `${i * 60}ms` }} onClick={() => nav(`/members/${m.id}`)}>
+                <div style={s.matchRank}>#{i + 1}</div>
+                <div style={s.matchAvatar}>
+                  {m.photos?.[0] ? <img src={m.photos[0]} alt="" style={s.matchPhoto} /> : <div style={s.matchAvatarFallback}>👤</div>}
+                  {m.is_online && <div style={s.onlineDot} />}
+                </div>
+                <div style={s.matchInfo}>
+                  <div style={s.matchName}>{m.username}</div>
+                  <div style={s.matchMeta}>{m.role} · {m.age ? `${m.age}yo` : ''}{m.city ? ` · ${m.city}` : ''}</div>
+                </div>
+                <div style={s.matchScore}>
+                  <div style={s.scoreBar}><div style={{ ...s.scoreFill, width: `${Math.min(100, m.score)}%` }} /></div>
+                  <div style={s.scoreLabel}>{m.score}%</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button style={{ ...s.retryBtn, marginTop: 24 }} onClick={reset}>Start over ↺</button>
+        </>
       )}
 
-      {phase === 'error' && <button style={s.retryBtn} onClick={reset}>Try again</button>}
-    </>
+      {step === 'error' && (
+        <>
+          <CypherBubble text="Something went wrong on my end. Want to try again?" />
+          <button style={s.retryBtn} onClick={reset}>Try again</button>
+        </>
+      )}
+
+      <div ref={bottomRef} />
+    </div>
   )
+}
+
+const c = {
+  chat: { width: '100%', padding: '8px 16px 120px', display: 'flex', flexDirection: 'column', gap: 12 },
+  bubbleRow: { display: 'flex', alignItems: 'flex-start', gap: 10, animation: 'fadeUp 0.35s ease both' },
+  cypherAvatar: { width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #4c1d95, #6d28d9)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: '#A78BFA', flexShrink: 0, marginTop: 2, boxShadow: '0 0 12px rgba(109,40,217,0.5)' },
+  cypherBubble: { background: 'rgba(109,40,217,0.15)', border: '1px solid rgba(109,40,217,0.3)', borderRadius: '4px 18px 18px 18px', padding: '12px 16px', fontSize: 14, color: '#E9D5FF', lineHeight: 1.55, maxWidth: '85%' },
+  userBubbleRow: { display: 'flex', justifyContent: 'flex-end', animation: 'fadeUp 0.3s ease both' },
+  userBubble: { background: 'rgba(124,58,237,0.35)', border: '1px solid rgba(124,58,237,0.5)', borderRadius: '18px 4px 18px 18px', padding: '10px 16px', fontSize: 14, color: '#F0EEFF', maxWidth: '80%' },
+  choiceRow: { display: 'flex', gap: 10, paddingLeft: 42, flexWrap: 'wrap' },
+  choiceBtn: { padding: '10px 22px', borderRadius: 50, background: 'rgba(109,40,217,0.2)', border: '1px solid rgba(109,40,217,0.5)', color: '#C4B5FD', fontWeight: 700, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s' },
+  inputWrap: { paddingLeft: 42, display: 'flex', flexDirection: 'column', gap: 10 },
+  inputRow: { display: 'flex', gap: 8, alignItems: 'flex-end' },
+  textarea: { flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(109,40,217,0.4)', borderRadius: 16, padding: '12px 14px', color: '#F0EEFF', fontSize: 14, lineHeight: 1.5, resize: 'none', fontFamily: 'inherit' },
+  micBtn: { width: 44, height: 44, borderRadius: '50%', background: 'rgba(109,40,217,0.2)', border: '1px solid rgba(109,40,217,0.4)', fontSize: 20, cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  micBtnActive: { background: 'rgba(109,40,217,0.5)', border: '1px solid #A78BFA', boxShadow: '0 0 12px rgba(109,40,217,0.6)' },
+  sendBtn: { alignSelf: 'flex-end', padding: '11px 24px', borderRadius: 50, background: 'linear-gradient(135deg, #6d28d9, #4c1d95)', color: '#fff', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' },
+  thinkingRow: { display: 'flex', alignItems: 'flex-start', gap: 10 },
+  thinkingBubble: { background: 'rgba(109,40,217,0.15)', border: '1px solid rgba(109,40,217,0.3)', borderRadius: '4px 18px 18px 18px', padding: '14px 20px', display: 'flex', gap: 6, alignItems: 'center' },
+  dot: { width: 8, height: 8, borderRadius: '50%', background: '#A78BFA', animation: 'orbPulse 1.2s ease-in-out infinite' },
 }
 
 function PartyMode({ nav, user }) {
