@@ -32,6 +32,8 @@ function useAlwaysOnVoice(nav, setListening, setLitWord) {
   const activeRef = useRef(false)
   const litTimerRef = useRef(null)
   const lastCmdRef = useRef({ cmd: '', time: 0 })
+  const mountedRef = useRef(true)
+  const restartTimerRef = useRef(null)
 
   const start = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -99,12 +101,14 @@ function useAlwaysOnVoice(nav, setListening, setLitWord) {
       if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
         setListening(false)
       } else {
-        setTimeout(() => start(), 250)
+        if (restartTimerRef.current) clearTimeout(restartTimerRef.current)
+        restartTimerRef.current = setTimeout(() => { if (mountedRef.current) start() }, 500)
       }
     }
     recog.onend = () => {
       activeRef.current = false
-      setTimeout(() => start(), 250)
+      if (restartTimerRef.current) clearTimeout(restartTimerRef.current)
+      restartTimerRef.current = setTimeout(() => { if (mountedRef.current) start() }, 500)
     }
     recogRef.current = recog
     activeRef.current = true
@@ -121,6 +125,8 @@ function useAlwaysOnVoice(nav, setListening, setLitWord) {
     document.addEventListener('click', onInteract)
     document.addEventListener('touchstart', onInteract)
     return () => {
+      mountedRef.current = false  // mark unmounted BEFORE abort so onend doesn't restart
+      if (restartTimerRef.current) clearTimeout(restartTimerRef.current)
       document.removeEventListener('click', onInteract)
       document.removeEventListener('touchstart', onInteract)
       try { recogRef.current?.abort() } catch {}

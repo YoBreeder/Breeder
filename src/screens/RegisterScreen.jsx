@@ -26,6 +26,8 @@ export default function RegisterScreen() {
   const [error, setError] = useState('')
   const [showPass, setShowPass] = useState(false)
   const recogRef = useRef(null)
+  const mountedRef = useRef(true)
+  const restartTimerRef = useRef(null)
 
   // Voice: "back" returns to landing
   useEffect(() => {
@@ -49,13 +51,13 @@ export default function RegisterScreen() {
           fire('submit', () => document.querySelector('form')?.requestSubmit())
         }
       }
-      recog.onend = () => setTimeout(startVoice, 800)
-      recog.onerror = (e) => { if (e.error !== 'not-allowed' && e.error !== 'service-not-allowed') setTimeout(startVoice, 800) }
+      recog.onend = () => { if (restartTimerRef.current) clearTimeout(restartTimerRef.current); restartTimerRef.current = setTimeout(() => { if (mountedRef.current) startVoice() }, 800) }
+      recog.onerror = (e) => { if (e.error !== 'not-allowed' && e.error !== 'service-not-allowed') { if (restartTimerRef.current) clearTimeout(restartTimerRef.current); restartTimerRef.current = setTimeout(() => { if (mountedRef.current) startVoice() }, 800) } }
       recogRef.current = recog
       try { recog.start() } catch {}
     }
     startVoice()
-    return () => { try { recogRef.current?.abort() } catch {} }
+    return () => { mountedRef.current = false; if (restartTimerRef.current) clearTimeout(restartTimerRef.current); try { recogRef.current?.abort() } catch {} }
   }, [])
 
   const age = calcAge(form.dob)

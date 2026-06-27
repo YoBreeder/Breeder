@@ -68,6 +68,7 @@ export default function LandingScreen() {
   const bullTimerRef = useRef(null)
   const restartTimerRef = useRef(null)
   const startedRef = useRef(false)
+  const mountedRef = useRef(true)
   const lastCmdRef = useRef({ cmd: '', time: 0 })
   const currentLang = LANGUAGES.find(l => l.code === lang)
   // Refs so voice callbacks always see current modal state
@@ -79,22 +80,25 @@ export default function LandingScreen() {
   useEffect(() => { showTermsRef.current = showTerms }, [showTerms])
 
   useEffect(() => {
+    mountedRef.current = true
     startListening()
     return () => {
+      mountedRef.current = false  // mark unmounted BEFORE abort so onend doesn't restart
+      if (restartTimerRef.current) clearTimeout(restartTimerRef.current)
       try { recogRef.current?.abort() } catch {}
       try { audioCtxRef.current?.close() } catch {}
       if (litTimerRef.current) clearTimeout(litTimerRef.current)
       if (litCardTimerRef.current) clearTimeout(litCardTimerRef.current)
       if (litTagTimerRef.current) clearTimeout(litTagTimerRef.current)
       if (bullTimerRef.current) clearTimeout(bullTimerRef.current)
-      if (restartTimerRef.current) clearTimeout(restartTimerRef.current)
     }
   }, [])
 
   const scheduleRestart = (delay = 800) => {
+    if (!mountedRef.current) return
     if (restartTimerRef.current) clearTimeout(restartTimerRef.current)
     restartTimerRef.current = setTimeout(() => {
-      if (!document.hidden) startListening()
+      if (mountedRef.current && !document.hidden) startListening()
     }, delay)
   }
 
