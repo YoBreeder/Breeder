@@ -305,11 +305,11 @@ export default function LandingScreen() {
           100% { color: rgba(167,139,250,0.6); transform: scale(1);    text-shadow: none; }
         }
         @keyframes bullStrut {
-          0%   { transform: translateY(0px) rotate(-2deg); }
-          25%  { transform: translateY(-5px) rotate(2deg); }
-          50%  { transform: translateY(0px) rotate(-2deg); }
-          75%  { transform: translateY(-5px) rotate(2deg); }
-          100% { transform: translateY(0px) rotate(-2deg); }
+          0%   { transform: scaleX(-1) translateY(0px) rotate(2deg); }
+          25%  { transform: scaleX(-1) translateY(-5px) rotate(-2deg); }
+          50%  { transform: scaleX(-1) translateY(0px) rotate(2deg); }
+          75%  { transform: scaleX(-1) translateY(-5px) rotate(-2deg); }
+          100% { transform: scaleX(-1) translateY(0px) rotate(2deg); }
         }
         @keyframes calfStrut {
           0%   { transform: translateY(0px) rotate(2deg); }
@@ -361,7 +361,7 @@ export default function LandingScreen() {
         <div style={s.logoWrap}>
           <div style={s.bullPair}>
             <span style={{ fontSize: 44, display: 'inline-block', animation: 'bullStrut 1.8s ease-in-out infinite' }}>🐂</span>
-            <span style={{ fontSize: 30, display: 'inline-block', animation: 'calfStrut 1.8s ease-in-out infinite 0.4s', transform: 'scaleX(-1)' }}>🐄</span>
+            <span style={{ fontSize: 30, display: 'inline-block', animation: 'calfStrut 1.8s ease-in-out infinite 0.4s' }}>🐄</span>
           </div>
           <div style={s.logoText}>
             <span style={s.yo}>Yo</span><span style={s.breeders}>Breeder</span>
